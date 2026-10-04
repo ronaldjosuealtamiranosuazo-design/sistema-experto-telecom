@@ -1,166 +1,104 @@
-const offers = {
-  Tigo: [
-    { min: 0, max: 20, data: 500, days: 1 },
-    { min: 21, max: 60, data: 3072, days: 3 },
-    { min: 61, max: 500, data: 10240, days: 7 },
-    { min: 501, max: 9999, data: 25600, days: 15 }
-  ],
-  Claro: [
-    { min: 0, max: 20, data: 400, days: 1 },
-    { min: 21, max: 60, data: 2500, days: 4 },
-    { min: 61, max: 500, data: 12288, days: 8 },
-    { min: 501, max: 9999, data: 30720, days: 20 }
-  ]
-};
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema Experto Telecom</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Sistema Experto Telecom</h1>
+        <p class="subtitle">Auditoría de canales, inferencia técnica y recomendación comercial</p>
+      </header>
 
-const records = [
-  {
-    id: 1,
-    operador: 'Tigo',
-    monto_recarga: 50,
-    latencia_ms: 45,
-    datos_init_kb: 30,
-    estado_canal: 'Excelente',
-    bolsa_datos_restantes: '3 GB',
-    vigencia: '3 Días',
-    diagnostico: 'Canal estable y compatible con recarga sin riesgo operativo.',
-    recomendacion: 'Autorizar carga y continuar con monitoreo estándar.'
-  },
-  {
-    id: 2,
-    operador: 'Claro',
-    monto_recarga: 100,
-    latencia_ms: 140,
-    datos_init_kb: 25,
-    estado_canal: 'Inestable',
-    bolsa_datos_restantes: '12 GB',
-    vigencia: '8 Días',
-    diagnostico: 'Se detecta degradación del canal y riesgo de interrupción.',
-    recomendacion: 'Conmutación por USSD y revisar estabilidad del enlace.'
-  },
-  {
-    id: 3,
-    operador: 'Tigo',
-    monto_recarga: 10,
-    latencia_ms: 60,
-    datos_init_kb: 185.5,
-    estado_canal: 'Crítico',
-    bolsa_datos_restantes: '500 MB',
-    vigencia: '1 Día',
-    diagnostico: 'Condición crítica global del servicio.',
-    recomendacion: 'Rechazar la carga y activar protocolo de contingencia.'
-  }
-];
+      <section class="grid" aria-label="estadísticas generales">
+        <div class="stat-card">
+          <div class="label">Excelente</div>
+          <div class="value" id="countExcelente">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Estable</div>
+          <div class="value" id="countEstable">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Inestable</div>
+          <div class="value" id="countInestable">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Crítico</div>
+          <div class="value" id="countCritico">0</div>
+        </div>
+      </section>
 
-function findOffer(operator, amount) {
-  const list = offers[operator] || [];
-  return list.find(item => amount >= item.min && amount <= item.max) || null;
-}
+      <main class="dashboard">
+        <section class="panel">
+          <h2>Historial de auditoría</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Operador</th>
+                  <th>Monto</th>
+                  <th>Latencia</th>
+                  <th>Datos iniciales</th>
+                  <th>Estado</th>
+                  <th>Bolsa</th>
+                  <th>Vigencia</th>
+                  <th>Diagnóstico</th>
+                  <th>Recomendación</th>
+                </tr>
+              </thead>
+              <tbody id="historyTable"></tbody>
+            </table>
+          </div>
+        </section>
 
-function evaluateChannel(operator, amount, latency, initialDataKb) {
-  let estado = 'Crítico';
-  let analisis = 'El canal presenta latencia extrema o payload excesivo, con riesgo alto de fallo y pérdida de sesión.';
-  let diagnostico = 'Condición crítica global del servicio.';
-  let recomendacion = 'Rechazar la carga y activar protocolo de contingencia.';
+        <aside class="panel">
+          <h2>Evaluación del canal</h2>
+          <form id="form-evaluation">
+            <label>
+              Operador
+              <select id="operador" required>
+                <option value="Tigo">Tigo</option>
+                <option value="Claro">Claro</option>
+              </select>
+            </label>
 
-  if (latency <= 50 && initialDataKb <= 100) {
-    estado = 'Excelente';
-    analisis = 'El canal presenta latencia dentro del umbral óptimo y el payload inicial no genera congestión.';
-    diagnostico = 'Canal estable y compatible con recarga sin riesgo operativo.';
-    recomendacion = 'Autorizar carga y continuar con monitoreo estándar.';
-  } else if (latency <= 100 && initialDataKb <= 150) {
-    estado = 'Estable';
-    analisis = 'Se observan condiciones normales de operación, aunque existe ligera sensibilidad en la red.';
-    diagnostico = 'Canal funcional con margen de operación aceptable.';
-    recomendacion = 'Autorizar recarga con observación durante los próximos ciclos.';
-  } else if (latency <= 140) {
-    estado = 'Inestable';
-    analisis = 'La latencia excede el rango recomendado y puede afectar la continuidad del servicio.';
-    diagnostico = 'Se detecta degradación del canal y riesgo de interrupción.';
-    recomendacion = 'Conmutación por USSD y revisar estabilidad del enlace.';
-  }
+            <label>
+              Monto de recarga
+              <input id="monto" type="number" min="0" step="0.01" value="50" required />
+            </label>
 
-  const offer = findOffer(operator, amount);
-  const dataMb = offer ? offer.data : 0;
-  const days = offer ? offer.days : 0;
+            <label>
+              Latencia (ms)
+              <input id="latencia" type="number" min="0" step="1" value="45" required />
+            </label>
 
-  return {
-    id: Date.now(),
-    operador: operator,
-    monto_recarga: Number(amount),
-    latencia_ms: Number(latency),
-    datos_init_kb: Number(initialDataKb),
-    estado_canal: estado,
-    bolsa_datos_restantes: dataMb >= 1024 ? `${(dataMb / 1024).toFixed(1)} GB` : `${dataMb} MB`,
-    vigencia: `${days} Días`,
-    diagnostico,
-    recomendacion,
-    analisis_tecnico: analisis
-  };
-}
+            <label>
+              Datos iniciales (KB)
+              <input id="datos" type="number" min="0" step="0.01" value="30" required />
+            </label>
 
-function renderRecords(list) {
-  const container = document.getElementById('historyTable');
-  container.innerHTML = list.map(item => `
-    <tr>
-      <td>${item.id}</td>
-      <td>${item.operador}</td>
-      <td>$${Number(item.monto_recarga).toFixed(2)}</td>
-      <td>${item.latencia_ms} ms</td>
-      <td>${item.datos_init_kb} KB</td>
-      <td><span class="badge ${item.estado_canal.toLowerCase()}">${item.estado_canal}</span></td>
-      <td>${item.bolsa_datos_restantes}</td>
-      <td>${item.vigencia}</td>
-      <td>${item.diagnostico}</td>
-      <td>${item.recomendacion}</td>
-    </tr>
-  `).join('');
-}
+            <button type="submit">Procesar inferencia</button>
+          </form>
 
-function renderSummary(list) {
-  const summary = {
-    Excelente: 0,
-    Estable: 0,
-    Inestable: 0,
-    Crítico: 0
-  };
+          <div class="result-box">
+            <div class="title">Estado del canal</div>
+            <div id="resultEstado" class="result-value">Excelente</div>
 
-  list.forEach(item => {
-    if (summary[item.estado_canal] !== undefined) {
-      summary[item.estado_canal] += 1;
-    }
-  });
+            <div class="title mt">Análisis técnico</div>
+            <p id="resultAnalisis"></p>
 
-  const cards = document.querySelectorAll('.stat-card .value');
-  cards[0].textContent = summary.Excelente;
-  cards[1].textContent = summary.Estable;
-  cards[2].textContent = summary.Inestable;
-  cards[3].textContent = summary.Crítico;
-}
+            <div class="title mt">Recomendación</div>
+            <p id="resultRecomendacion"></p>
+          </div>
+        </aside>
+      </main>
+    </div>
 
-function handleSubmit(event) {
-  event.preventDefault();
-  const operator = document.getElementById('operador').value;
-  const monto = Number(document.getElementById('monto').value);
-  const latencia = Number(document.getElementById('latencia').value);
-  const dataKb = Number(document.getElementById('datos').value);
-
-  const result = evaluateChannel(operator, monto, latencia, dataKb);
-  const combined = [result, ...records];
-  records.unshift(result);
-  renderRecords(combined.slice(0, 10));
-  renderSummary(records);
-
-  document.getElementById('resultEstado').textContent = result.estado_canal;
-  document.getElementById('resultRecomendacion').textContent = result.recomendacion;
-  document.getElementById('resultAnalisis').textContent = result.analisis_tecnico;
-}
-
-document.getElementById('form-evaluation').addEventListener('submit', handleSubmit);
-renderRecords(records);
-renderSummary(records);
-
-const initial = evaluateChannel('Tigo', 50, 45, 30);
-document.getElementById('resultEstado').textContent = initial.estado_canal;
-document.getElementById('resultRecomendacion').textContent = initial.recomendacion;
-document.getElementById('resultAnalisis').textContent = initial.analisis_tecnico;
+    <script src="app.js"></script>
+  </body>
+</html>
