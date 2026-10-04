@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema Experto Telecom</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Telecom Intelligence</p>
+        <h1>Sistema Experto Telecom</h1>
+      </div>
+      <div class="status-pill">Monitoreo activo</div>
+    </header>
+
+    <section class="stats-grid">
+      <article class="stat-card success">
+        <span class="label">Excelente</span>
+        <strong id="countExcelente">0</strong>
+      </article>
+      <article class="stat-card info">
+        <span class="label">Estable</span>
+        <strong id="countEstable">0</strong>
+      </article>
+      <article class="stat-card warning">
+        <span class="label">Inestable</span>
+        <strong id="countInestable">0</strong>
+      </article>
+      <article class="stat-card danger">
+        <span class="label">Crítico</span>
+        <strong id="countCritico">0</strong>
+      </article>
+    </section>
+
+    <main class="content-grid">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Historial de auditoría</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Operador</th>
+                <th>Monto</th>
+                <th>Latencia</th>
+                <th>Datos</th>
+                <th>Estado</th>
+                <th>Bolsa</th>
+                <th>Vigencia</th>
+                <th>Diagnóstico</th>
+                <th>Recomendación</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody id="historyTable">
+              <tr><td colspan="11" style="text-align: center; color: #94a3b8;">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="panel side-panel">
+        <div class="panel-header">
+          <h2>Evaluación del canal</h2>
+        </div>
+
+        <form id="form-evaluation">
+          <label>
+            Operador
+            <select id="operador">
+              <option value="Tigo">Tigo</option>
+              <option value="Claro">Claro</option>
+            </select>
+          </label>
+
+          <label>
+            Monto de recarga
+            <input id="monto" type="number" step="0.01" value="50" />
+          </label>
+
+          <label>
+            Latencia (ms)
+            <input id="latencia" type="number" step="1" value="45" />
+          </label>
+
+          <label>
+            Datos iniciales (KB)
+            <input id="datos" type="number" step="0.01" value="30" />
+          </label>
+
+          <button type="submit">Procesar inferencia</button>
+        </form>
+
+        <div class="result-box">
+          <div class="label">Estado del canal</div>
+          <div id="resultEstado" class="result-value badge excelente">Excelente</div>
+          <div class="info-block">
+            <strong>Análisis técnico</strong>
+            <p id="resultAnalisis"></p>
+          </div>
+          <div class="info-block">
+            <strong>Recomendación</strong>
+            <p id="resultRecomendacion"></p>
+          </div>
+        </div>
+
+        <div class="offers-box">
+          <h3>Ofertas por operador</h3>
+          <div id="offersList"></div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
