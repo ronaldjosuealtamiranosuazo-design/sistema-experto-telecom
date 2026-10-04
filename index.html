@@ -4,37 +4,235 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistema Experto Telecom</title>
-    <link rel="stylesheet" href="styles.css" />
+    <style>
+      :root {
+        --bg-1: #07111d;
+        --bg-2: #0f172a;
+        --panel: rgba(15, 23, 42, 0.92);
+        --line: rgba(148, 163, 184, 0.22);
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --green: #22c55e;
+        --green-soft: rgba(34, 197, 94, 0.18);
+        --blue: #3b82f6;
+        --blue-soft: rgba(59, 130, 246, 0.16);
+        --amber: #f59e0b;
+        --amber-soft: rgba(245, 158, 11, 0.18);
+        --red: #ef4444;
+        --red-soft: rgba(239, 68, 68, 0.18);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+        color: var(--text);
+      }
+
+      body { padding: 24px; }
+
+      .container { max-width: 1300px; margin: 0 auto; }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: #7dd3fc;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 0.75rem;
+      }
+
+      h1 { margin: 0; font-size: clamp(2rem, 2.5vw, 2.9rem); }
+
+      .badge-live {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        color: #bbf7d0;
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .stat-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 20px 18px;
+        box-shadow: 0 12px 22px rgba(0,0,0,0.18);
+      }
+
+      .stat-card .label {
+        color: var(--muted);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .stat-card strong {
+        display: block;
+        margin-top: 10px;
+        font-size: 2.1rem;
+      }
+
+      .success { background: var(--green-soft); border-color: rgba(34, 197, 94, 0.32); }
+      .info { background: var(--blue-soft); border-color: rgba(59, 130, 246, 0.32); }
+      .warning { background: var(--amber-soft); border-color: rgba(245, 158, 11, 0.32); }
+      .danger { background: var(--red-soft); border-color: rgba(239, 68, 68, 0.32); }
+
+      .content-grid {
+        display: grid;
+        grid-template-columns: 1.6fr 0.9fr;
+        gap: 24px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 10px 18px rgba(0,0,0,0.12);
+      }
+
+      .panel-header h2 { margin: 0 0 18px; font-size: 1.25rem; }
+
+      .table-wrap { overflow-x: auto; }
+      table { width: 100%; border-collapse: collapse; min-width: 930px; }
+      th, td {
+        border-bottom: 1px solid var(--line);
+        padding: 12px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        color: #dbeafe;
+        font-size: 0.77rem;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+      }
+
+      .side-panel { display: flex; flex-direction: column; gap: 18px; }
+
+      form { display: grid; gap: 14px; }
+      label { display: grid; gap: 8px; color: var(--text); font-size: 0.92rem; }
+      input, select {
+        width: 100%;
+        background: rgba(15, 23, 42, 0.85);
+        color: white;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 1rem;
+      }
+
+      button {
+        appearance: none;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #3b82f6, #14b8a6);
+        color: white;
+        font-weight: 700;
+        padding: 12px 18px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+      button:hover { transform: translateY(-2px); }
+
+      .result-box, .offers-box {
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+      }
+
+      .result-value { display: inline-block; margin-top: 8px; margin-bottom: 12px; }
+      .badge {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+      .badge.excelente { background: rgba(34, 197, 94, 0.15); color: #bbf7d0; }
+      .badge.estable { background: rgba(59, 130, 246, 0.14); color: #bfdbfe; }
+      .badge.inestable { background: rgba(245, 158, 11, 0.18); color: #fef3c7; }
+      .badge.crítico { background: rgba(239, 68, 68, 0.18); color: #fecaca; }
+
+      .info-block { margin-top: 10px; }
+      .info-block strong { display: block; margin-bottom: 6px; }
+      .info-block p { margin: 0; color: #dfe7f3; line-height: 1.5; }
+
+      .offer-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.83rem;
+      }
+      .offer-row:last-child { border-bottom: none; }
+
+      .muted { color: var(--muted); }
+
+      @media (max-width: 980px) { .content-grid { grid-template-columns: 1fr; } }
+      @media (max-width: 640px) {
+        body { padding: 16px; }
+        .topbar { flex-direction: column; align-items: flex-start; }
+        .stats-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
+      }
+    </style>
   </head>
   <body>
     <div class="container">
-      <header>
-        <h1>Sistema Experto Telecom</h1>
-        <p class="subtitle">Auditoría de canales, inferencia técnica y recomendación comercial</p>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Telecom Intelligence</p>
+          <h1>Sistema Experto Telecom</h1>
+        </div>
+        <div class="badge-live">Ejecutable local</div>
       </header>
 
-      <section class="grid" aria-label="estadísticas generales">
-        <div class="stat-card">
+      <section class="stats-grid" aria-label="estadísticas generales">
+        <article class="stat-card success">
           <div class="label">Excelente</div>
-          <div class="value" id="countExcelente">0</div>
-        </div>
-        <div class="stat-card">
+          <strong id="countExcelente">0</strong>
+        </article>
+        <article class="stat-card info">
           <div class="label">Estable</div>
-          <div class="value" id="countEstable">0</div>
-        </div>
-        <div class="stat-card">
+          <strong id="countEstable">0</strong>
+        </article>
+        <article class="stat-card warning">
           <div class="label">Inestable</div>
-          <div class="value" id="countInestable">0</div>
-        </div>
-        <div class="stat-card">
+          <strong id="countInestable">0</strong>
+        </article>
+        <article class="stat-card danger">
           <div class="label">Crítico</div>
-          <div class="value" id="countCritico">0</div>
-        </div>
+          <strong id="countCritico">0</strong>
+        </article>
       </section>
 
-      <main class="dashboard">
+      <main class="content-grid">
         <section class="panel">
-          <h2>Historial de auditoría</h2>
+          <div class="panel-header">
+            <h2>Historial de auditoría</h2>
+          </div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -43,12 +241,13 @@
                   <th>Operador</th>
                   <th>Monto</th>
                   <th>Latencia</th>
-                  <th>Datos iniciales</th>
+                  <th>Datos</th>
                   <th>Estado</th>
                   <th>Bolsa</th>
                   <th>Vigencia</th>
                   <th>Diagnóstico</th>
                   <th>Recomendación</th>
+                  <th>Fecha</th>
                 </tr>
               </thead>
               <tbody id="historyTable"></tbody>
@@ -56,12 +255,15 @@
           </div>
         </section>
 
-        <aside class="panel">
-          <h2>Evaluación del canal</h2>
+        <aside class="panel side-panel">
+          <div class="panel-header">
+            <h2>Evaluación del canal</h2>
+          </div>
+
           <form id="form-evaluation">
             <label>
               Operador
-              <select id="operador" required>
+              <select id="operador">
                 <option value="Tigo">Tigo</option>
                 <option value="Claro">Claro</option>
               </select>
@@ -86,19 +288,267 @@
           </form>
 
           <div class="result-box">
-            <div class="title">Estado del canal</div>
-            <div id="resultEstado" class="result-value">Excelente</div>
+            <div class="label">Estado del canal</div>
+            <div id="resultEstado" class="result-value badge excelente">Excelente</div>
 
-            <div class="title mt">Análisis técnico</div>
-            <p id="resultAnalisis"></p>
+            <div class="info-block">
+              <strong>Análisis técnico</strong>
+              <p id="resultAnalisis"></p>
+            </div>
 
-            <div class="title mt">Recomendación</div>
-            <p id="resultRecomendacion"></p>
+            <div class="info-block">
+              <strong>Recomendación</strong>
+              <p id="resultRecomendacion"></p>
+            </div>
+          </div>
+
+          <div class="offers-box">
+            <h3>Ofertas por operador</h3>
+            <div id="offersList"></div>
           </div>
         </aside>
       </main>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+      const STORAGE_KEY = 'sistema_experto_telecom_history';
+
+      const DATA_OFFERS = {
+        Tigo: [
+          { min: 0, max: 20, data: 500, days: 1, label: 'Básico' },
+          { min: 21, max: 60, data: 3072, days: 3, label: 'Medio' },
+          { min: 61, max: 500, data: 10240, days: 7, label: 'Regular' },
+          { min: 501, max: 9999, data: 25600, days: 15, label: 'Premium' }
+        ],
+        Claro: [
+          { min: 0, max: 20, data: 400, days: 1, label: 'Básico' },
+          { min: 21, max: 60, data: 2500, days: 4, label: 'Medio' },
+          { min: 61, max: 500, data: 12288, days: 8, label: 'Regular' },
+          { min: 501, max: 9999, data: 30720, days: 20, label: 'Premium' }
+        ]
+      };
+
+      const defaultRecords = [
+        {
+          id: 1,
+          operador: 'Tigo',
+          monto_recarga: 50,
+          latencia_ms: 45,
+          datos_init_kb: 30,
+          estado_canal: 'Excelente',
+          datos_recibidos_mb: 3072,
+          dias_vigencia: 3,
+          diagnostico: 'Canal estable y compatible con recarga sin riesgo operativo.',
+          recomendacion: 'Autorizar carga y continuar con monitoreo estándar.',
+          analisis_tecnico: 'El canal presenta latencia dentro del umbral óptimo y el payload inicial no genera congestión.',
+          fecha_registro: new Date().toISOString()
+        },
+        {
+          id: 2,
+          operador: 'Claro',
+          monto_recarga: 100,
+          latencia_ms: 140,
+          datos_init_kb: 25,
+          estado_canal: 'Inestable',
+          datos_recibidos_mb: 12288,
+          dias_vigencia: 8,
+          diagnostico: 'Se detecta degradación del canal y riesgo de interrupción.',
+          recomendacion: 'Conmutación por USSD y revisar estabilidad del enlace.',
+          analisis_tecnico: 'La latencia excede el rango recomendado y puede afectar la continuidad del servicio.',
+          fecha_registro: new Date().toISOString()
+        },
+        {
+          id: 3,
+          operador: 'Tigo',
+          monto_recarga: 10,
+          latencia_ms: 60,
+          datos_init_kb: 185.5,
+          estado_canal: 'Crítico',
+          datos_recibidos_mb: 500,
+          dias_vigencia: 1,
+          diagnostico: 'Condición crítica global del servicio.',
+          recomendacion: 'Rechazar la carga y activar protocolo de contingencia.',
+          analisis_tecnico: 'El canal presenta latencia extrema o payload excesivo, con riesgo alto de fallo y pérdida de sesión.',
+          fecha_registro: new Date().toISOString()
+        }
+      ];
+
+      function getHistory() {
+        const data = localStorage.getItem(STORAGE_KEY);
+        if (!data) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultRecords));
+          return [...defaultRecords];
+        }
+        try {
+          const parsed = JSON.parse(data);
+          return Array.isArray(parsed) && parsed.length ? parsed : [...defaultRecords];
+        } catch {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultRecords));
+          return [...defaultRecords];
+        }
+      }
+
+      function saveHistory(rows) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
+      }
+
+      function formatMoney(value) {
+        return `$${Number(value).toFixed(2)}`;
+      }
+
+      function formatDataSize(mb) {
+        return mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${mb} MB`;
+      }
+
+      function findOffer(operator, amount) {
+        const offers = DATA_OFFERS[operator] || [];
+        return offers.find(item => amount >= item.min && amount <= item.max) || null;
+      }
+
+      function evaluateChannel(operator, amount, latency, initialDataKb) {
+        let estado = 'Crítico';
+        let analisis = 'El canal presenta latencia extrema o payload excesivo, con riesgo alto de fallo y pérdida de sesión.';
+        let diagnostico = 'Condición crítica global del servicio.';
+        let recomendacion = 'Rechazar la carga y activar protocolo de contingencia.';
+
+        if (latency <= 50 && initialDataKb <= 100) {
+          estado = 'Excelente';
+          analisis = 'El canal presenta latencia dentro del umbral óptimo y el payload inicial no genera congestión.';
+          diagnostico = 'Canal estable y compatible con recarga sin riesgo operativo.';
+          recomendacion = 'Autorizar carga y continuar con monitoreo estándar.';
+        } else if (latency <= 100 && initialDataKb <= 150) {
+          estado = 'Estable';
+          analisis = 'Se observan condiciones normales de operación, aunque existe ligera sensibilidad en la red.';
+          diagnostico = 'Canal funcional con margen de operación aceptable.';
+          recomendacion = 'Autorizar recarga con observación durante los próximos ciclos.';
+        } else if (latency <= 140) {
+          estado = 'Inestable';
+          analisis = 'La latencia excede el rango recomendado y puede afectar la continuidad del servicio.';
+          diagnostico = 'Se detecta degradación del canal y riesgo de interrupción.';
+          recomendacion = 'Conmutación por USSD y revisar estabilidad del enlace.';
+        }
+
+        const offer = findOffer(operator, amount);
+        const dataMb = offer ? offer.data : 0;
+        const days = offer ? offer.days : 0;
+
+        return {
+          id: Date.now(),
+          operador: operator,
+          monto_recarga: Number(amount),
+          latencia_ms: Number(latency),
+          datos_init_kb: Number(initialDataKb),
+          estado_canal: estado,
+          datos_recibidos_mb: dataMb,
+          dias_vigencia: days,
+          diagnostico,
+          recomendacion,
+          analisis_tecnico: analisis,
+          fecha_registro: new Date().toISOString()
+        };
+      }
+
+      function renderRecords(rows) {
+        const tbody = document.getElementById('historyTable');
+        if (!rows || !rows.length) {
+          tbody.innerHTML = '<tr><td colspan="11" class="muted" style="text-align:center;">Sin registros</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = rows.slice(0, 10).map((item) => {
+          const fecha = new Date(item.fecha_registro).toLocaleString('es-ES');
+          return `
+            <tr>
+              <td>${item.id}</td>
+              <td>${item.operador}</td>
+              <td>${formatMoney(item.monto_recarga)}</td>
+              <td>${item.latencia_ms} ms</td>
+              <td>${item.datos_init_kb} KB</td>
+              <td><span class="badge ${item.estado_canal.toLowerCase()}">${item.estado_canal}</span></td>
+              <td>${formatDataSize(item.datos_recibidos_mb)}</td>
+              <td>${item.dias_vigencia} d</td>
+              <td>${item.diagnostico}</td>
+              <td>${item.recomendacion}</td>
+              <td>${fecha}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function renderSummary(rows) {
+        const summary = { Excelente: 0, Estable: 0, Inestable: 0, Crítico: 0 };
+
+        rows.forEach((item) => {
+          if (summary[item.estado_canal] !== undefined) {
+            summary[item.estado_canal] += 1;
+          }
+        });
+
+        document.getElementById('countExcelente').textContent = summary.Excelente;
+        document.getElementById('countEstable').textContent = summary.Estable;
+        document.getElementById('countInestable').textContent = summary.Inestable;
+        document.getElementById('countCritico').textContent = summary.Crítico;
+      }
+
+      function renderOffers(operator) {
+        const list = DATA_OFFERS[operator] || [];
+        const container = document.getElementById('offersList');
+
+        container.innerHTML = list.map((item) => `
+          <div class="offer-row">
+            <div><strong>${item.label}</strong></div>
+            <div>${item.min} - ${item.max}</div>
+            <div>${item.data} MB</div>
+            <div>${item.days} días</div>
+          </div>
+        `).join('');
+      }
+
+      function setResult(result) {
+        const estadoEl = document.getElementById('resultEstado');
+        const analisisEl = document.getElementById('resultAnalisis');
+        const recomendacionEl = document.getElementById('resultRecomendacion');
+
+        estadoEl.textContent = result.estado_canal;
+        estadoEl.className = `result-value badge ${result.estado_canal.toLowerCase()}`;
+        analisisEl.textContent = result.analisis_tecnico;
+        recomendacionEl.textContent = result.recomendacion;
+      }
+
+      function init() {
+        const history = getHistory();
+        renderRecords(history);
+        renderSummary(history);
+        renderOffers('Tigo');
+
+        const initial = evaluateChannel('Tigo', 50, 45, 30);
+        setResult(initial);
+      }
+
+      document.getElementById('operador').addEventListener('change', (e) => {
+        renderOffers(e.target.value);
+      });
+
+      document.getElementById('form-evaluation').addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const operador = document.getElementById('operador').value;
+        const monto = Number(document.getElementById('monto').value);
+        const latencia = Number(document.getElementById('latencia').value);
+        const datos = Number(document.getElementById('datos').value);
+
+        const result = evaluateChannel(operador, monto, latencia, datos);
+        const history = getHistory();
+        const next = [result, ...history].slice(0, 10);
+        saveHistory(next);
+
+        renderRecords(next);
+        renderSummary(next);
+        renderOffers(operador);
+        setResult(result);
+      });
+
+      init();
+    </script>
   </body>
 </html>
