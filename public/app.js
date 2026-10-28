@@ -1,145 +1,268 @@
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = (() => {
+  const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  return isLocal ? 'http://localhost:3001/api' : '/api';
+})();
 
-let records = [];
+const state = {
+  records: [],
+};
+
+const escapeHtml = (value) => {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+
+  return String(value ?? '').replace(/[&<>"']/g, (char) => map[char]);
+};
+
+const safeNumber = (value, fallback = 0) => {
+  const num = Number(value ?? fallback);
+  return Number.isFinite(num) ? num : fallback;
+};
+
+const safeText = (value, fallback = '') => {
+  if (value === null || value === undefined || value === '') {
+    return fallback;
+  }
+  return String(value);
+};
+
+const safeDate = (value) => {
+  if (!value) return 'Sin fecha';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Fecha inválida' : date.toLocaleString('es-ES');
+};
 
 function formatMoney(value) {
-  return `$${Number(value).toFixed(2)}`;
+  return `$${safeNumber(value, 0).toFixed(2)}`;
 }
 
 function formatDataSize(mb) {
-  return mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${mb} MB`;
+  const value = safeNumber(mb, 0);
+  return value >= 1024 ? `${(value / 1024).toFixed(1)} GB` : `${value} MB`;
+}
+
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
 }
 
 async function loadHistorial() {
+  const table = document.getElementById('historyTable');
+  if (!table) return;
+
   try {
-    const response = await fetch(`${API_BASE_URL}/historial?limit=10`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    records = data;
-    renderRecords(data);
+    const data = await fetchJson(`${API_BASE_URL}/historial?limit=10`);
+    state.records = Array.isArray(data) ? data : [];
+    renderRecords(state.records);
   } catch (error) {
     console.error('Error cargando historial:', error);
-    document.getElementById('historyTable').innerHTML = 
-      '<tr><td colspan="11" style="text-align: center; color: #ef4444;">Error al cargar historial</td></tr>';
+    table.innerHTML = '<tr><td colspan="11" style="text-align: center; color: #ef4444;">Error al cargar historial</td></tr>';
   }
 }
 
 async function loadResumen() {
   try {
-    const response = await fetch(`${API_BASE_URL}/resumen`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const summary = await response.json();
-    document.getElementById('countExcelente').textContent = summary.Excelente || 0;
-    document.getElementById('countEstable').textContent = summary.Estable || 0;
-    document.getElementById('countInestable').textContent = summary.Inestable || 0;
-    document.getElementById('countCritico').textContent = summary.Crítico || 0;
+    const summary = await fetchJson(`${API_BASE_URL}/resumen`);
+
+    const map = {
+      Excelente: 'countExcelente',
+      Estable: 'countEstable',
+      Inestable: 'countInestable',
+      Crítico: 'countCritico',
+    };
+
+    Object.entries(map).forEach(([key, id]) => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.textContent = safeNumber(summary?.[key], 0);
+      }
+    });
   } catch (error) {
     console.error('Error cargando resumen:', error);
   }
 }
 
 async function loadOfertas(operador) {
+  const container = document.getElementById('offersList');
+  if (!container) return;
+
+  const operadorActual = safeText(operador, '').trim();
+  if (!operadorActual) {
+    container.innerHTML = '<p style="color: #94a3b8;">Selecciona un operador</p>';
+    return;
+  }
+
   try {
-    const response = await fetch(`${API_BASE_URL}/ofertas/${operador}`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const ofertas = await response.json();
-    renderOfertasList(ofertas);
+    const ofertas = await fetchJson(`${API_BASE_URL}/ofertas/${encodeURIComponent(operadorActual)}`);
+    renderOfertasList(Array.isArray(ofertas) ? ofertas : []);
   } catch (error) {
     console.error('Error cargando ofertas:', error);
+    container.innerHTML = '<p style="color: #ef4444;">No se pudieron cargar las ofertas</p>';
   }
 }
 
 function renderRecords(data) {
   const tbody = document.getElementById('historyTable');
-  if (!data || data.length === 0) {
+  if (!tbody) return;
+
+  const list = Array.isArray(data) ? data : [];
+
+  if (list.length === 0) {
     tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: #94a3b8;">Sin registros</td></tr>';
     return;
   }
-  
-  tbody.innerHTML = data.map(item => {
-    const fecha = new Date(item.fecha_registro).toLocaleString('es-ES');
-    return `
-      <tr>
-        <td>${item.id}</td>
-        <td>${item.operador}</td>
-        <td>${formatMoney(item.monto_recarga)}</td>
-        <td>${item.latencia_ms} ms</td>
-        <td>${item.datos_init_kb} KB</td>
-        <td><span class="badge ${item.estado_canal.toLowerCase()}">${item.estado_canal}</span></td>
-        <td>${formatDataSize(item.datos_recibidos_mb)}</td>
-        <td>${item.dias_vigencia} d</td>
-        <td>${item.diagnostico}</td>
-        <td>${item.recomendacion}</td>
-        <td>${fecha}</td>
-      </tr>
-    `;
-  }).join('');
+
+  tbody.innerHTML = list
+    .map((item) => {
+      const operador = escapeHtml(safeText(item.operador, ''));
+      const estado = escapeHtml(safeText(item.estado_canal, ''));
+      const diagnostico = escapeHtml(safeText(item.diagnostico, ''));
+      const recomendacion = escapeHtml(safeText(item.recomendacion, ''));
+      const fecha = safeDate(item.fecha_registro);
+      const monto = formatMoney(item.monto_recarga);
+      const latencia = safeNumber(item.latencia_ms, 0);
+      const datosInit = safeNumber(item.datos_init_kb, 0);
+      const datosRecibidos = formatDataSize(item.datos_recibidos_mb);
+      const dias = safeNumber(item.dias_vigencia, 0);
+
+      return `
+        <tr>
+          <td>${escapeHtml(safeText(item.id, ''))}</td>
+          <td>${operador}</td>
+          <td>${monto}</td>
+          <td>${latencia} ms</td>
+          <td>${datosInit} KB</td>
+          <td><span class="badge ${estado.toLowerCase()}">${estado}</span></td>
+          <td>${datosRecibidos}</td>
+          <td>${dias} d</td>
+          <td>${diagnostico}</td>
+          <td>${recomendacion}</td>
+          <td>${fecha}</td>
+        </tr>
+      `;
+    })
+    .join('');
 }
 
 function renderOfertasList(ofertas) {
   const container = document.getElementById('offersList');
-  if (!ofertas || ofertas.length === 0) {
+  if (!container) return;
+
+  const list = Array.isArray(ofertas) ? ofertas : [];
+
+  if (list.length === 0) {
     container.innerHTML = '<p style="color: #94a3b8;">No hay ofertas disponibles</p>';
     return;
   }
-  
-  container.innerHTML = ofertas.map(item => `
-    <div class="offer-row">
-      <div><strong>$${item.monto_min}-$${item.monto_max}</strong></div>
-      <div>${formatDataSize(item.datos_recibidos_mb)}</div>
-      <div>${item.dias_vigencia} días</div>
-      <div>${item.descripcion}</div>
-    </div>
-  `).join('');
+
+  container.innerHTML = list
+    .map((item) => {
+      const descripcion = escapeHtml(safeText(item.descripcion, ''));
+      const montoMin = formatMoney(item.monto_min);
+      const montoMax = formatMoney(item.monto_max);
+      const datos = formatDataSize(item.datos_recibidos_mb);
+      const dias = safeNumber(item.dias_vigencia, 0);
+
+      return `
+        <div class="offer-row">
+          <div><strong>${montoMin}-${montoMax}</strong></div>
+          <div>${datos}</div>
+          <div>${dias} días</div>
+          <div>${descripcion}</div>
+        </div>
+      `;
+    })
+    .join('');
 }
 
 async function handleSubmit(event) {
   event.preventDefault();
-  
-  const operador = document.getElementById('operador').value;
-  const monto = document.getElementById('monto').value;
-  const latencia = document.getElementById('latencia').value;
-  const datos = document.getElementById('datos').value;
-  
+
+  const operador = document.getElementById('operador')?.value?.trim();
+  const monto = document.getElementById('monto')?.value;
+  const latencia = document.getElementById('latencia')?.value;
+  const datos = document.getElementById('datos')?.value;
+
+  if (!operador || !monto || !latencia || !datos) {
+    alert('Completa todos los campos');
+    return;
+  }
+
+  const montoNum = Number.parseFloat(monto);
+  const latenciaNum = Number.parseInt(latencia, 10);
+  const datosNum = Number.parseFloat(datos);
+
+  if ([montoNum, latenciaNum, datosNum].some((value) => !Number.isFinite(value))) {
+    alert('Los valores ingresados no son válidos');
+    return;
+  }
+
   try {
-    const response = await fetch(`${API_BASE_URL}/evaluar`, {
+    const result = await fetchJson(`${API_BASE_URL}/evaluar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         operador,
-        monto_recarga: parseFloat(monto),
-        latencia_ms: parseInt(latencia),
-        datos_init_kb: parseFloat(datos)
-      })
+        monto_recarga: montoNum,
+        latencia_ms: latenciaNum,
+        datos_init_kb: datosNum,
+      }),
     });
-    
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const result = await response.json();
-    
-    // Actualizar resultado
-    document.getElementById('resultEstado').textContent = result.estado_canal;
-    document.getElementById('resultEstado').className = `result-value badge ${result.estado_canal.toLowerCase()}`;
-    document.getElementById('resultAnalisis').textContent = result.analisis_tecnico;
-    document.getElementById('resultRecomendacion').textContent = result.recomendacion;
-    
-    // Recargar datos
-    loadHistorial();
-    loadResumen();
+
+    const estadoEl = document.getElementById('resultEstado');
+    const analisisEl = document.getElementById('resultAnalisis');
+    const recomendacionEl = document.getElementById('resultRecomendacion');
+
+    if (estadoEl) {
+      const estado = safeText(result.estado_canal, '');
+      estadoEl.textContent = estado;
+      estadoEl.className = `result-value badge ${estado.toLowerCase()}`;
+    }
+
+    if (analisisEl) {
+      analisisEl.textContent = safeText(result.analisis_tecnico, '');
+    }
+
+    if (recomendacionEl) {
+      recomendacionEl.textContent = safeText(result.recomendacion, '');
+    }
+
+    await Promise.all([loadHistorial(), loadResumen()]);
   } catch (error) {
     console.error('Error en evaluación:', error);
     alert('Error al procesar la evaluación');
   }
 }
 
-// Event listeners
-document.getElementById('form-evaluation').addEventListener('submit', handleSubmit);
-document.getElementById('operador').addEventListener('change', (e) => {
-  loadOfertas(e.target.value);
-});
+function bindEvents() {
+  const form = document.getElementById('form-evaluation');
+  if (form) {
+    form.addEventListener('submit', handleSubmit);
+  }
 
-// Cargar datos al iniciar
-window.addEventListener('DOMContentLoaded', () => {
-  loadHistorial();
-  loadResumen();
-  loadOfertas('Tigo');
-});
+  const operadorSelect = document.getElementById('operador');
+  if (operadorSelect) {
+    operadorSelect.addEventListener('change', (event) => {
+      loadOfertas(event.target.value);
+    });
+  }
+}
+
+async function initApp() {
+  bindEvents();
+  await Promise.all([loadHistorial(), loadResumen(), loadOfertas('Tigo')]);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
